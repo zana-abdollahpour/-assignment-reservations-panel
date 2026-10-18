@@ -1,13 +1,10 @@
-import { StyleProvider } from "@ant-design/cssinjs";
-import { ConfigProvider, notification } from "antd";
-import faIR from "antd/locale/fa_IR";
-
 import {
   MutationCache,
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { notification } from "antd";
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -28,12 +25,12 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export function ReactQueryProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <StyleProvider layer>
-        <ConfigProvider locale={faIR}>{children}</ConfigProvider>
-      </StyleProvider>
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 }
