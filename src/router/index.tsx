@@ -1,14 +1,18 @@
-import { BrowserRouter, Routes } from "react-router";
+import { BrowserRouter, Route, Routes } from "react-router";
 
 import { HomeRoutes } from "@/router/home.routes";
 import { DashboardRoutes } from "@/router/dashboard.routes";
+
+import { MainLayout } from "@/shared/layouts/main-layout";
 
 export default function Router() {
   return (
     <BrowserRouter>
       <Routes>
-        {HomeRoutes}
-        {DashboardRoutes}
+        <Route element={<MainLayout />}>
+          {HomeRoutes}
+          {DashboardRoutes}
+        </Route>
       </Routes>
     </BrowserRouter>
   );
