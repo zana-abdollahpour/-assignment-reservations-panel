@@ -1,38 +1,65 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import {
+  CalendarOutlined,
   DesktopOutlined,
   HomeOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  SettingOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { Button, Drawer, Layout, Menu, Typography } from "antd";
 import type { MenuProps } from "antd";
 
+import { getPageTitle, routes } from "@/router/routes.config";
+
 const { Content, Sider } = Layout;
 
-const menuItems: MenuProps["items"] = [
+const navigationRoutes = [
   {
-    key: "/",
+    ...routes.home,
     icon: <HomeOutlined />,
-    label: <Link to="/">خانه</Link>,
   },
   {
-    key: "/dashboard",
+    ...routes.dashboard,
     icon: <DesktopOutlined />,
-    label: <Link to="/dashboard">داشبورد</Link>,
   },
-];
+  {
+    ...routes.bookings,
+    icon: <CalendarOutlined />,
+  },
+  {
+    ...routes.customers,
+    icon: <UserOutlined />,
+  },
+  {
+    ...routes.settings,
+    icon: <SettingOutlined />,
+  },
+] as const;
+
+const menuItems: MenuProps["items"] = navigationRoutes.map((route) => ({
+  key: route.path,
+  icon: route.icon,
+  label: <Link to={route.path}>{route.title}</Link>,
+}));
 
 function NavigationMenu({ onNavigate }: { onNavigate?: () => void }) {
   const { pathname } = useLocation();
-  const selectedKey = pathname === "/" ? "/" : "/dashboard";
+
+  const selectedKey = navigationRoutes.find(
+    (route) =>
+      pathname === route.path ||
+      (route.path !== routes.home.path &&
+        pathname.startsWith(`${route.path}/`)),
+  )?.path;
 
   return (
     <Menu
       mode="inline"
       items={menuItems}
-      selectedKeys={[selectedKey]}
+      selectedKeys={selectedKey ? [selectedKey] : []}
       onClick={onNavigate}
       className="border-e-0!"
     />
@@ -42,6 +69,9 @@ function NavigationMenu({ onNavigate }: { onNavigate?: () => void }) {
 export function MainLayout() {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const { pathname } = useLocation();
+  const pageTitle = getPageTitle(pathname);
 
   return (
     <Layout hasSider className="min-h-screen" dir="rtl">
@@ -59,6 +89,7 @@ export function MainLayout() {
               پنل رزرو
             </Typography.Title>
           )}
+
           <Button
             type="text"
             aria-label={desktopCollapsed ? "باز کردن منو" : "بستن منو"}
@@ -68,19 +99,28 @@ export function MainLayout() {
             onClick={() => setDesktopCollapsed((collapsed) => !collapsed)}
           />
         </div>
+
         <NavigationMenu />
       </Sider>
 
       <Layout className="min-w-0">
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:hidden">
-          <Button
-            type="text"
-            aria-label="منو"
-            aria-expanded={mobileOpen}
-            icon={mobileOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
-            onClick={() => setMobileOpen((open) => !open)}
-          />
+        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              className="lg:hidden"
+              type="text"
+              aria-label="منو"
+              aria-expanded={mobileOpen}
+              icon={mobileOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
+              onClick={() => setMobileOpen((open) => !open)}
+            />
+
+            <Typography.Title level={4} className="m-0! truncate">
+              {pageTitle}
+            </Typography.Title>
+          </div>
         </header>
+
         <Content className="min-h-screen p-4 lg:p-6">
           <Outlet />
         </Content>
