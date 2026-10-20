@@ -84,5 +84,6 @@ export function getPageTitle(pathname: string): string {
         a.path.split("/").filter(Boolean).length,
     );
 
-  return matches[0]?.title ?? "پنل رزرو";
+  return matches[0]?.title ?? "صفحه پیدا نشد";
 }
+
