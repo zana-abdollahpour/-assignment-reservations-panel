@@ -74,14 +74,14 @@ export function MainLayout() {
   const pageTitle = getPageTitle(pathname);
 
   return (
-    <Layout hasSider className="min-h-screen" dir="rtl">
+    <Layout hasSider className="h-dvh overflow-hidden" dir="rtl">
       <Sider
         width={256}
         collapsedWidth={80}
         collapsed={desktopCollapsed}
         trigger={null}
         theme="light"
-        className="hidden border-s border-gray-200 lg:block"
+        className="hidden h-dvh shrink-0 overflow-y-auto border border-gray-200 lg:block"
       >
         <div className="flex h-16 items-center justify-between px-4">
           {!desktopCollapsed && (
@@ -91,11 +91,13 @@ export function MainLayout() {
           )}
 
           <Button
-            type="text"
+            type="default"
             aria-label={desktopCollapsed ? "باز کردن منو" : "بستن منو"}
+            title={desktopCollapsed ? "باز کردن منو" : "بستن منو"}
             icon={
               desktopCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
             }
+            className="h-10! w-10! shrink-0 rounded-lg! border-blue-200! bg-blue-50! text-blue-700! shadow-sm hover:border-blue-300! hover:bg-blue-100! hover:text-blue-800! focus-visible:ring-2! focus-visible:ring-blue-500!"
             onClick={() => setDesktopCollapsed((collapsed) => !collapsed)}
           />
         </div>
@@ -103,13 +105,14 @@ export function MainLayout() {
         <NavigationMenu />
       </Sider>
 
-      <Layout className="min-w-0">
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
+      <Layout className="h-full min-h-0 min-w-0">
+        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Button
-              className="lg:hidden"
-              type="text"
-              aria-label="منو"
+              className="h-10! w-10! shrink-0 rounded-lg! border-blue-200! bg-blue-50! text-blue-700! shadow-sm hover:border-blue-300! hover:bg-blue-100! hover:text-blue-800! focus-visible:ring-2! focus-visible:ring-blue-500! lg:hidden"
+              type="default"
+              aria-label={mobileOpen ? "بستن منو" : "باز کردن منو"}
+              title={mobileOpen ? "بستن منو" : "باز کردن منو"}
               aria-expanded={mobileOpen}
               icon={mobileOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
               onClick={() => setMobileOpen((open) => !open)}
@@ -121,7 +124,7 @@ export function MainLayout() {
           </div>
         </header>
 
-        <Content className="min-h-screen p-4 lg:p-6">
+        <Content className="min-h-0 flex-1 overflow-y-auto p-4 lg:p-6">
           <Outlet />
         </Content>
       </Layout>
