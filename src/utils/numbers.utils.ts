@@ -1,7 +1,11 @@
 const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
 const englishDigitMap: Record<string, string> = {
   ...Object.fromEntries([...persianDigits].map((digit, index) => [digit, String(index)])),
-  ...Object.fromEntries("٠١٢٣٤٥٦٧٨٩".split("").map((digit, index) => [digit, String(index)])),
+  ...Object.fromEntries(
+    [..."٠١٢٣٤٥٦٧٨٩"].map(
+      (digit, index) => [digit, String(index)],
+    ),
+  ),
 };
 
 export function toPersianDigits(value: string): string {

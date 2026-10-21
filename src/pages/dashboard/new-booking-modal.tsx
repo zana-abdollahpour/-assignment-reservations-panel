@@ -1,8 +1,35 @@
-import { useState } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { ClockCircleOutlined } from "@ant-design/icons";
 import { Button, DatePicker, Form, Input, Modal, TimePicker } from "antd";
 import { reservationSchema, zodFieldRule } from "./reservation-validation";
 import type { NewBookingValues } from "./types";
+import { toPersianDigits } from "@/utils/numbers.utils";
+
+function persianizePickerContent(node: ReactNode): ReactNode {
+  if (typeof node === "string" || typeof node === "number") {
+    return toPersianDigits(String(node));
+  }
+
+  if (Array.isArray(node)) {
+    return node.map(persianizePickerContent);
+  }
+
+  if (isValidElement<{ children?: ReactNode }>(node)) {
+    return cloneElement(
+      node as ReactElement<{ children?: ReactNode }>,
+      undefined,
+      persianizePickerContent(node.props.children),
+    );
+  }
+
+  return node;
+}
 
 type NewBookingModalProps = {
   open: boolean;
@@ -77,7 +104,15 @@ export function NewBookingModal({
             required
             rules={[zodFieldRule(reservationSchema.shape.date)]}
           >
-            <DatePicker className="w-full" placeholder="انتخاب تاریخ" />
+            <DatePicker
+              className="w-full"
+              cellRender={(_, info) => persianizePickerContent(info.originNode)}
+              format={[
+                (date) => toPersianDigits(date.format("YYYY/MM/DD")),
+                "YYYY/MM/DD",
+              ]}
+              placeholder="انتخاب تاریخ"
+            />
           </Form.Item>
           <Form.Item
             label="ساعت"
@@ -87,7 +122,12 @@ export function NewBookingModal({
           >
             <TimePicker
               className="w-full"
-              format="HH:mm"
+              format={[
+                (time) => toPersianDigits(time.format("HH:mm")),
+                "HH:mm",
+              ]}
+              showSecond={false}
+              cellRender={(_, info) => persianizePickerContent(info.originNode)}
               placeholder="انتخاب ساعت"
             />
           </Form.Item>
