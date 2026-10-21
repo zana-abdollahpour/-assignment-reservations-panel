@@ -2,6 +2,8 @@ import { useState } from "react";
 import { PlusOutlined } from "@ant-design/icons";
 import { Button, Typography } from "antd";
 import dayjs from "dayjs";
+import "jalaliday";
+
 import { BookingStats } from "./booking-stats";
 import { BookingTable } from "./booking-table";
 import { initialBookings } from "./mock-data";
@@ -22,7 +24,7 @@ export default function DashboardPage() {
       customer: values.customer,
       phone: values.phone,
       service: values.service,
-      date: values.date.format("YYYY-MM-DD"),
+      date: values.date.calendar("gregory").format("YYYY-MM-DD"),
       time: toPersianDigits(dayjs(values.time).format("HH:mm")),
       status: "در انتظار تأیید",
     };
