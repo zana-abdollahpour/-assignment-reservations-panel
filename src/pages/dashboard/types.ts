@@ -2,11 +2,14 @@ import type { Dayjs } from "dayjs";
 
 export type BookingStatus = "تأییدشده" | "در انتظار تأیید" | "لغوشده";
 
-export enum BookingStatusQuery {
-  Confirmed = "confirmed",
-  Pending = "pending",
-  Cancelled = "cancelled",
-}
+export const BookingStatusQuery = {
+  Confirmed: "confirmed",
+  Pending: "pending",
+  Cancelled: "cancelled",
+} as const;
+
+export type BookingStatusQuery =
+  (typeof BookingStatusQuery)[keyof typeof BookingStatusQuery];
 
 export type Booking = {
   id: number;

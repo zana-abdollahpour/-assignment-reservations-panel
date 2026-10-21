@@ -8,6 +8,7 @@ import { BookingStats } from "./booking-stats";
 import { BookingTable } from "./booking-table";
 import { initialBookings } from "./mock-data";
 import { NewBookingModal } from "./new-booking-modal";
+import { normalizeIranianMobile } from "./reservation-validation";
 import type { Booking, NewBookingValues } from "./types";
 
 function toPersianDigits(value: string) {
@@ -21,9 +22,9 @@ export default function DashboardPage() {
   function createBooking(values: NewBookingValues) {
     const newBooking: Booking = {
       id: Date.now(),
-      customer: values.customer,
-      phone: values.phone,
-      service: values.service,
+      customer: values.customer.trim(),
+      phone: toPersianDigits(normalizeIranianMobile(values.phone)),
+      service: values.service.trim(),
       date: values.date.calendar("gregory").format("YYYY-MM-DD"),
       time: toPersianDigits(dayjs(values.time).format("HH:mm")),
       status: "در انتظار تأیید",
