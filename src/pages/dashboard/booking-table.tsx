@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
-import type { HTMLAttributes, PointerEvent as ReactPointerEvent } from "react";
+import { useSearchParams } from "react-router";
 import { SearchOutlined } from "@ant-design/icons";
 import { Card, Empty, Input, Select, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
-import { useSearchParams } from "react-router";
-import { BookingStatusQuery, type Booking, type BookingStatus } from "./types";
+import type { HTMLAttributes, PointerEvent as ReactPointerEvent } from "react";
 
-const numberFormatter = new Intl.NumberFormat("fa-IR");
+import { BookingStatusQuery, type Booking, type BookingStatus } from "./types";
+import { formatPersianNumber, toEnglishDigits } from "@/utils/numbers.utils";
+
 const dateFormatter = new Intl.DateTimeFormat("fa-IR", {
   year: "numeric",
   month: "short",
@@ -27,29 +28,6 @@ const statusByQuery: Record<BookingStatusQuery, BookingStatus> = {
   [BookingStatusQuery.Pending]: "در انتظار تأیید",
   [BookingStatusQuery.Cancelled]: "لغوشده",
 };
-const digitMap: Record<string, string> = {
-  "۰": "0",
-  "۱": "1",
-  "۲": "2",
-  "۳": "3",
-  "۴": "4",
-  "۵": "5",
-  "۶": "6",
-  "۷": "7",
-  "۸": "8",
-  "۹": "9",
-  "٠": "0",
-  "١": "1",
-  "٢": "2",
-  "٣": "3",
-  "٤": "4",
-  "٥": "5",
-  "٦": "6",
-  "٧": "7",
-  "٨": "8",
-  "٩": "9",
-};
-
 type ResizableHeaderProps = HTMLAttributes<HTMLTableCellElement> & {
   width?: number;
   onResizeColumn?: (width: number) => void;
@@ -122,10 +100,6 @@ function ResizableHeaderCell({
   );
 }
 
-function normalizeDigits(value: string) {
-  return value.replace(/[۰-۹٠-٩]/g, (digit) => digitMap[digit]);
-}
-
 function formatDate(date: string) {
   return dateFormatter.format(new Date(`${date}T12:00:00`));
 }
@@ -133,13 +107,13 @@ function formatDate(date: string) {
 function compareDateThenTime(a: Booking, b: Booking) {
   return (
     a.date.localeCompare(b.date) ||
-    normalizeDigits(a.time).localeCompare(normalizeDigits(b.time))
+    toEnglishDigits(a.time).localeCompare(toEnglishDigits(b.time))
   );
 }
 
 function compareTimeThenDate(a: Booking, b: Booking) {
   return (
-    normalizeDigits(a.time).localeCompare(normalizeDigits(b.time)) ||
+    toEnglishDigits(a.time).localeCompare(toEnglishDigits(b.time)) ||
     a.date.localeCompare(b.date)
   );
 }
@@ -148,11 +122,14 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get("q") ?? "";
   const requestedStatus = searchParams.get("status");
-  const isStatusQuery = Object.values(BookingStatusQuery).some((value) => value === requestedStatus);
+  const isStatusQuery = Object.values(BookingStatusQuery).some(
+    (value) => value === requestedStatus,
+  );
   const statusFilterKey: BookingStatusQuery | "all" = isStatusQuery
-    ? requestedStatus as BookingStatusQuery
+    ? (requestedStatus as BookingStatusQuery)
     : "all";
-  const statusFilter = statusFilterKey === "all" ? "all" : statusByQuery[statusFilterKey];
+  const statusFilter =
+    statusFilterKey === "all" ? "all" : statusByQuery[statusFilterKey];
   const requestedSort = searchParams.get("sort");
   const sortField =
     requestedSort === "date" ||
@@ -188,14 +165,14 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
   }
 
   const filteredBookings = useMemo(() => {
-    const query = normalizeDigits(
+    const query = toEnglishDigits(
       search.trim().toLocaleLowerCase("fa-IR"),
     ).replace(/\s/g, "");
     return bookings.filter((booking) => {
       const customer = booking.customer
         .toLocaleLowerCase("fa-IR")
         .replace(/\s/g, "");
-      const phone = normalizeDigits(booking.phone).replace(/\s/g, "");
+      const phone = toEnglishDigits(booking.phone).replace(/\s/g, "");
       const matchesSearch =
         !query || customer.includes(query) || phone.includes(query);
       return (
@@ -296,7 +273,7 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
             فهرست رزروها
           </Typography.Title>
           <Typography.Text className="mt-1 block text-sm text-gray-500">
-            {numberFormatter.format(filteredBookings.length)} رزرو
+            {formatPersianNumber(filteredBookings.length)} رزرو
           </Typography.Text>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -340,7 +317,7 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
           current: currentPage,
           showSizeChanger: false,
           position: ["bottomRight"],
-          showTotal: (total) => `${numberFormatter.format(total)} رزرو`,
+          showTotal: (total) => `${formatPersianNumber(total)} رزرو`,
         }}
         scroll={{
           x: Object.values(columnWidths).reduce(

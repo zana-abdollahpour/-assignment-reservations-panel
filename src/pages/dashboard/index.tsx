@@ -11,9 +11,7 @@ import { NewBookingModal } from "./new-booking-modal";
 import { normalizeIranianMobile } from "./reservation-validation";
 import type { Booking, NewBookingValues } from "./types";
 
-function toPersianDigits(value: string) {
-  return value.replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
-}
+import { toPersianDigits } from "@/utils/numbers.utils";
 
 export default function DashboardPage() {
   const [bookings, setBookings] = useState(initialBookings);

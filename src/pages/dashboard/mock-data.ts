@@ -1,5 +1,7 @@
 import dayjs from "dayjs";
 import jalaliday from "jalaliday";
+
+import { toPersianDigits } from "@/utils/numbers.utils";
 import type { Booking, BookingStatus } from "./types";
 
 dayjs.extend(jalaliday);
@@ -61,8 +63,6 @@ const statuses: BookingStatus[] = [
   "تأییدشده",
   "لغوشده",
 ];
-const toPersianDigits = (value: string) =>
-  value.replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
 
 export const initialBookings: Booking[] = customers.map((customer, index) => {
   const dateOffset = (index % 11) - 3;

@@ -1,35 +1,12 @@
 import dayjs, { type Dayjs } from "dayjs";
-import "jalaliday";
 import { z } from "zod";
 import type { RuleObject } from "antd/es/form";
+import "jalaliday";
 
-const digitMap: Record<string, string> = {
-  "۰": "0",
-  "۱": "1",
-  "۲": "2",
-  "۳": "3",
-  "۴": "4",
-  "۵": "5",
-  "۶": "6",
-  "۷": "7",
-  "۸": "8",
-  "۹": "9",
-  "٠": "0",
-  "١": "1",
-  "٢": "2",
-  "٣": "3",
-  "٤": "4",
-  "٥": "5",
-  "٦": "6",
-  "٧": "7",
-  "٨": "8",
-  "٩": "9",
-};
+import { toEnglishDigits } from "@/utils/numbers.utils";
 
 export function normalizeIranianMobile(value: string) {
-  const normalized = value
-    .replace(/[۰-۹٠-٩]/g, (digit) => digitMap[digit])
-    .replace(/[\s()-]/g, "");
+  const normalized = toEnglishDigits(value).replace(/[\s()-]/g, "");
 
   if (normalized.startsWith("+98")) return `0${normalized.slice(3)}`;
   if (normalized.startsWith("0098")) return `0${normalized.slice(4)}`;
