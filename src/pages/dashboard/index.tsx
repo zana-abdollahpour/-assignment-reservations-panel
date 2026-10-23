@@ -1,58 +1,141 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PlusOutlined } from "@ant-design/icons";
-import { Button, Typography } from "antd";
+import { Button, notification, Typography } from "antd";
 import dayjs from "dayjs";
 import "jalaliday";
+import { useSearchParams } from "react-router";
 
 import { BookingStats } from "./booking-stats";
 import { BookingTable } from "./booking-table";
-import { initialBookings } from "./mock-data";
 import { NewBookingModal } from "./new-booking-modal";
 import { BookingDetailsModal } from "./booking-details-modal";
-import { normalizeIranianMobile } from "./reservation-validation";
+import { normalizeIranianMobile } from "@/utils/phone.utils";
 import type { Booking, NewBookingValues } from "./types";
-
-import { toPersianDigits } from "@/utils/numbers.utils";
+import {
+  bookingsApi,
+  type BookingPayload,
+  type BookingSummary,
+} from "./bookings-api";
 
 export default function DashboardPage() {
-  const [bookings, setBookings] = useState(initialBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<BookingSummary>({
+    total: 0,
+    today: 0,
+    confirmed: 0,
+    cancelled: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [searchParams] = useSearchParams();
+  const queryString = searchParams.toString();
 
-  function createBooking(values: NewBookingValues) {
-    const newBooking: Booking = {
-      id: Date.now(),
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    bookingsApi
+      .list(queryString)
+      .then((page) => {
+        if (active) {
+          setBookings(page.items);
+          setTotal(page.total);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          notification.error({
+            message:
+              error instanceof Error
+                ? error.message
+                : "دریافت رزروها ناموفق بود.",
+          });
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [queryString, refreshKey]);
+
+  useEffect(() => {
+    let active = true;
+    bookingsApi
+      .summary()
+      .then((nextSummary) => {
+        if (active) setSummary(nextSummary);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          notification.error({
+            message:
+              error instanceof Error
+                ? error.message
+                : "دریافت آمار رزروها ناموفق بود.",
+          });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [refreshKey]);
+
+  async function createBooking(values: NewBookingValues) {
+    const newBooking: BookingPayload = {
       customer: values.customer.trim(),
-      phone: toPersianDigits(normalizeIranianMobile(values.phone)),
+      phone: normalizeIranianMobile(values.phone),
       service: values.service.trim(),
       date: values.date.calendar("gregory").format("YYYY-MM-DD"),
-      time: toPersianDigits(dayjs(values.time).format("HH:mm")),
+      time: dayjs(values.time).format("HH:mm"),
       status: "در انتظار تأیید",
     };
-    setBookings((current) => [newBooking, ...current]);
-    setCreateOpen(false);
+    setSaving(true);
+    try {
+      await bookingsApi.create(newBooking);
+      setRefreshKey((current) => current + 1);
+      setCreateOpen(false);
+    } catch (error) {
+      notification.error({
+        message:
+          error instanceof Error ? error.message : "ثبت رزرو ناموفق بود.",
+      });
+      throw error;
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function updateBooking(
+  async function updateBooking(
     id: number,
     values: NewBookingValues & { status: Booking["status"] },
   ) {
-    setBookings((current) =>
-      current.map((booking) =>
-        booking.id === id
-          ? {
-              ...booking,
-              customer: values.customer.trim(),
-              phone: toPersianDigits(normalizeIranianMobile(values.phone)),
-              service: values.service.trim(),
-              date: values.date.calendar("gregory").format("YYYY-MM-DD"),
-              time: toPersianDigits(dayjs(values.time).format("HH:mm")),
-              status: values.status,
-            }
-          : booking,
-      ),
-    );
-    setSelectedBooking(null);
+    const updatedBooking: BookingPayload = {
+      customer: values.customer.trim(),
+      phone: normalizeIranianMobile(values.phone),
+      service: values.service.trim(),
+      date: values.date.calendar("gregory").format("YYYY-MM-DD"),
+      time: dayjs(values.time).format("HH:mm"),
+      status: values.status,
+    };
+    setSaving(true);
+    try {
+      await bookingsApi.update(id, updatedBooking);
+      setRefreshKey((current) => current + 1);
+      setSelectedBooking(null);
+    } catch (error) {
+      notification.error({
+        message:
+          error instanceof Error ? error.message : "ویرایش رزرو ناموفق بود.",
+      });
+      throw error;
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -77,15 +160,22 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      <BookingStats bookings={bookings} />
-      <BookingTable bookings={bookings} onSelectBooking={setSelectedBooking} />
+      <BookingStats summary={summary} />
+      <BookingTable
+        bookings={bookings}
+        total={total}
+        loading={loading}
+        onSelectBooking={setSelectedBooking}
+      />
       <BookingDetailsModal
         booking={selectedBooking}
+        loading={saving}
         onClose={() => setSelectedBooking(null)}
         onSave={updateBooking}
       />
       <NewBookingModal
         open={createOpen}
+        loading={saving}
         onClose={() => setCreateOpen(false)}
         onCreate={createBooking}
       />

@@ -3,19 +3,7 @@ import { z } from "zod";
 import type { RuleObject } from "antd/es/form";
 import "jalaliday";
 
-import { toEnglishDigits } from "@/utils/numbers.utils";
-
-export function normalizeIranianMobile(value: string) {
-  const normalized = toEnglishDigits(value).replace(/[\s()-]/g, "");
-
-  if (normalized.startsWith("+98")) return `0${normalized.slice(3)}`;
-  if (normalized.startsWith("0098")) return `0${normalized.slice(4)}`;
-  if (normalized.startsWith("98") && normalized.length === 12) {
-    return `0${normalized.slice(2)}`;
-  }
-  if (/^9\d{9}$/.test(normalized)) return `0${normalized}`;
-  return normalized;
-}
+import { normalizeIranianMobile } from "@/utils/phone.utils";
 
 const customerSchema = z
   .string({ error: "نام مشتری را وارد کنید" })

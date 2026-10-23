@@ -1,54 +1,35 @@
-import {
-  cloneElement,
-  isValidElement,
-  useState,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { useState } from "react";
 import { ClockCircleOutlined } from "@ant-design/icons";
 import { Button, DatePicker, Form, Input, Modal, TimePicker } from "antd";
 import { reservationSchema, zodFieldRule } from "./reservation-validation";
 import type { NewBookingValues } from "./types";
+import { persianizePickerContent } from "@/utils/persian-picker.utils";
 import { toPersianDigits } from "@/utils/numbers.utils";
-
-function persianizePickerContent(node: ReactNode): ReactNode {
-  if (typeof node === "string" || typeof node === "number") {
-    return toPersianDigits(String(node));
-  }
-
-  if (Array.isArray(node)) {
-    return node.map(persianizePickerContent);
-  }
-
-  if (isValidElement<{ children?: ReactNode }>(node)) {
-    return cloneElement(
-      node as ReactElement<{ children?: ReactNode }>,
-      undefined,
-      persianizePickerContent(node.props.children),
-    );
-  }
-
-  return node;
-}
 
 type NewBookingModalProps = {
   open: boolean;
+  loading: boolean;
   onClose: () => void;
-  onCreate: (values: NewBookingValues) => void;
+  onCreate: (values: NewBookingValues) => Promise<void>;
 };
 
 export function NewBookingModal({
   open,
+  loading,
   onClose,
   onCreate,
 }: NewBookingModalProps) {
   const [form] = Form.useForm<NewBookingValues>();
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
-  function submit(values: NewBookingValues) {
-    onCreate(values);
-    form.resetFields();
-    setHasAttemptedSubmit(false);
+  async function submit(values: NewBookingValues) {
+    try {
+      await onCreate(values);
+      form.resetFields();
+      setHasAttemptedSubmit(false);
+    } catch {
+      // Keep the form open so the user can retry after a failed request.
+    }
   }
 
   function close() {
@@ -138,6 +119,7 @@ export function NewBookingModal({
             type="primary"
             htmlType="submit"
             icon={<ClockCircleOutlined />}
+            loading={loading}
           >
             ثبت رزرو
           </Button>

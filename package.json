@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "start": "npm run build && node server/index.ts",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -17,6 +18,7 @@
     "antd-jalali-v5": "^1.1.0",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.11",
+    "express": "^5.3.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-error-boundary": "^6.1.6",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@tanstack/eslint-plugin-query": "^5.104.4",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.19.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

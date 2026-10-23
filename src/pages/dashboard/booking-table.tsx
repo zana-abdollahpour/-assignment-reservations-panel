@@ -1,12 +1,21 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Card, Empty, Input, Select, Table, Tag, Typography } from "antd";
+import {
+  Button,
+  Card,
+  Empty,
+  Input,
+  Select,
+  Table,
+  Tag,
+  Typography,
+} from "antd";
 import type { TableColumnsType } from "antd";
 import type { HTMLAttributes, PointerEvent as ReactPointerEvent } from "react";
 
 import { BookingStatusQuery, type Booking, type BookingStatus } from "./types";
-import { formatPersianNumber, toEnglishDigits } from "@/utils/numbers.utils";
+import { formatPersianNumber, toPersianDigits } from "@/utils/numbers.utils";
 
 const dateFormatter = new Intl.DateTimeFormat("fa-IR", {
   year: "numeric",
@@ -17,16 +26,6 @@ const statusColors: Record<BookingStatus, string> = {
   تأییدشده: "success",
   "در انتظار تأیید": "warning",
   لغوشده: "error",
-};
-const statusOrder: Record<BookingStatus, number> = {
-  تأییدشده: 0,
-  "در انتظار تأیید": 1,
-  لغوشده: 2,
-};
-const statusByQuery: Record<BookingStatusQuery, BookingStatus> = {
-  [BookingStatusQuery.Confirmed]: "تأییدشده",
-  [BookingStatusQuery.Pending]: "در انتظار تأیید",
-  [BookingStatusQuery.Cancelled]: "لغوشده",
 };
 type ResizableHeaderProps = HTMLAttributes<HTMLTableCellElement> & {
   width?: number;
@@ -104,25 +103,15 @@ function formatDate(date: string) {
   return dateFormatter.format(new Date(`${date}T12:00:00`));
 }
 
-function compareDateThenTime(a: Booking, b: Booking) {
-  return (
-    a.date.localeCompare(b.date) ||
-    toEnglishDigits(a.time).localeCompare(toEnglishDigits(b.time))
-  );
-}
-
-function compareTimeThenDate(a: Booking, b: Booking) {
-  return (
-    toEnglishDigits(a.time).localeCompare(toEnglishDigits(b.time)) ||
-    a.date.localeCompare(b.date)
-  );
-}
-
 export function BookingTable({
   bookings,
+  total,
+  loading,
   onSelectBooking,
 }: {
   bookings: Booking[];
+  total: number;
+  loading: boolean;
   onSelectBooking: (booking: Booking) => void;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -134,8 +123,6 @@ export function BookingTable({
   const statusFilterKey: BookingStatusQuery | "all" = isStatusQuery
     ? (requestedStatus as BookingStatusQuery)
     : "all";
-  const statusFilter =
-    statusFilterKey === "all" ? "all" : statusByQuery[statusFilterKey];
   const requestedSort = searchParams.get("sort");
   const sortField =
     requestedSort === "date" ||
@@ -170,24 +157,6 @@ export function BookingTable({
     setSearchParams(nextParams, { replace });
   }
 
-  const filteredBookings = useMemo(() => {
-    const query = toEnglishDigits(
-      search.trim().toLocaleLowerCase("fa-IR"),
-    ).replace(/\s/g, "");
-    return bookings.filter((booking) => {
-      const customer = booking.customer
-        .toLocaleLowerCase("fa-IR")
-        .replace(/\s/g, "");
-      const phone = toEnglishDigits(booking.phone).replace(/\s/g, "");
-      const matchesSearch =
-        !query || customer.includes(query) || phone.includes(query);
-      return (
-        matchesSearch &&
-        (statusFilter === "all" || booking.status === statusFilter)
-      );
-    });
-  }, [bookings, search, statusFilter]);
-
   const columns: TableColumnsType<Booking> = [
     {
       title: "مشتری",
@@ -202,7 +171,7 @@ export function BookingTable({
       render: (name: string, booking) => (
         <div className="flex flex-col gap-1">
           <span className="font-semibold text-gray-800">{name}</span>
-          <span className="text-xs text-gray-500">{booking.phone}</span>
+          <span className="text-xs text-gray-500">{toPersianDigits(booking.phone)}</span>
         </div>
       ),
     },
@@ -228,7 +197,7 @@ export function BookingTable({
           width: columnWidths.date,
           onResizeColumn: (width: number) => resizeColumn("date", width),
         }) as HTMLAttributes<HTMLTableCellElement>,
-      sorter: compareDateThenTime,
+      sorter: true,
       render: (date: string) => formatDate(date),
     },
     {
@@ -242,15 +211,15 @@ export function BookingTable({
           width: columnWidths.time,
           onResizeColumn: (width: number) => resizeColumn("time", width),
         }) as HTMLAttributes<HTMLTableCellElement>,
-      sorter: compareTimeThenDate,
-      render: (time: string) => <span dir="ltr">{time}</span>,
+      sorter: true,
+      render: (time: string) => <span dir="ltr">{toPersianDigits(time)}</span>,
     },
     {
       title: "وضعیت",
       dataIndex: "status",
       key: "status",
       sortOrder: sortField === "status" ? sortOrder : null,
-      sorter: (a, b) => statusOrder[a.status] - statusOrder[b.status],
+      sorter: true,
       width: columnWidths.status,
       onHeaderCell: () =>
         ({
@@ -296,7 +265,7 @@ export function BookingTable({
             فهرست رزروها
           </Typography.Title>
           <Typography.Text className="mt-1 block text-sm text-gray-500">
-            {formatPersianNumber(filteredBookings.length)} رزرو
+            {formatPersianNumber(total)} رزرو
           </Typography.Text>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -329,18 +298,20 @@ export function BookingTable({
         </div>
       </div>
       <Table<Booking>
+        loading={loading}
         rowKey="id"
         columns={columns}
-        dataSource={filteredBookings}
+        dataSource={bookings}
         locale={{
           emptyText: <Empty description="رزروی با این مشخصات پیدا نشد" />,
         }}
         pagination={{
           pageSize: 8,
           current: currentPage,
+          total,
           showSizeChanger: false,
           position: ["bottomRight"],
-          showTotal: (total) => `${formatPersianNumber(total)} رزرو`,
+          showTotal: (count) => `${formatPersianNumber(count)} رزرو`,
         }}
         scroll={{
           x: Object.values(columnWidths).reduce(

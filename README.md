@@ -1,5 +1,22 @@
 # React + TypeScript + Vite
 
+## Run the dashboard in development
+
+Install dependencies with `npm install`, then start the API and frontend in separate terminals:
+
+```sh
+npm run dev:server
+npm run dev
+```
+
+The Express API listens on port `3001`; Vite proxies `/api` requests to it. The API keeps bookings in memory, so they reset when the server restarts. Every API response is delayed by two seconds for the demo.
+
+## Build and serve
+
+Run `npm start` to build the frontend and then serve the static build and API together from Express. The server serves the `dist` folder and falls back to `index.html` for frontend routes.
+
+Available routes: `GET /api/bookings` (supports `q`, `status`, `sort`, `order`, `page`, and `pageSize` query parameters), `GET /api/bookings/summary`, `POST /api/bookings`, `PUT /api/bookings/:id`, and `DELETE /api/bookings/:id`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

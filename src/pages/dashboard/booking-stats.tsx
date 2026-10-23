@@ -5,8 +5,7 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import { Card, Statistic } from "antd";
-import type { Booking } from "./types";
-import { today } from "./mock-data";
+import type { BookingSummary } from "./bookings-api";
 
 import { formatPersianNumber } from "@/utils/numbers.utils";
 
@@ -36,43 +35,13 @@ function StatCard({
   );
 }
 
-export function BookingStats({ bookings }: { bookings: Booking[] }) {
-  const confirmed = bookings.filter(
-    (booking) => booking.status === "تأییدشده",
-  ).length;
-  const cancelled = bookings.filter(
-    (booking) => booking.status === "لغوشده",
-  ).length;
-  const todaysBookings = bookings.filter(
-    (booking) => booking.date === today,
-  ).length;
-
+export function BookingStats({ summary }: { summary: BookingSummary }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <StatCard
-        title="کل رزروها"
-        value={bookings.length}
-        icon={<TeamOutlined />}
-        color="text-blue-600"
-      />
-      <StatCard
-        title="رزروهای امروز"
-        value={todaysBookings}
-        icon={<CalendarOutlined />}
-        color="text-violet-600"
-      />
-      <StatCard
-        title="رزروهای تأییدشده"
-        value={confirmed}
-        icon={<CheckCircleOutlined />}
-        color="text-green-600"
-      />
-      <StatCard
-        title="رزروهای لغوشده"
-        value={cancelled}
-        icon={<CloseCircleOutlined />}
-        color="text-red-500"
-      />
+      <StatCard title="کل رزروها" value={summary.total} icon={<TeamOutlined />} color="text-blue-600" />
+      <StatCard title="رزروهای امروز" value={summary.today} icon={<CalendarOutlined />} color="text-violet-600" />
+      <StatCard title="رزروهای تأییدشده" value={summary.confirmed} icon={<CheckCircleOutlined />} color="text-green-600" />
+      <StatCard title="رزروهای لغوشده" value={summary.cancelled} icon={<CloseCircleOutlined />} color="text-red-500" />
     </div>
   );
 }
