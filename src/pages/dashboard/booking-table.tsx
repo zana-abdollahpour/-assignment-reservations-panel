@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
-import { SearchOutlined } from "@ant-design/icons";
-import { Card, Empty, Input, Select, Table, Tag, Typography } from "antd";
+import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, Card, Empty, Input, Select, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import type { HTMLAttributes, PointerEvent as ReactPointerEvent } from "react";
 
@@ -118,7 +118,13 @@ function compareTimeThenDate(a: Booking, b: Booking) {
   );
 }
 
-export function BookingTable({ bookings }: { bookings: Booking[] }) {
+export function BookingTable({
+  bookings,
+  onSelectBooking,
+}: {
+  bookings: Booking[];
+  onSelectBooking: (booking: Booking) => void;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get("q") ?? "";
   const requestedStatus = searchParams.get("status");
@@ -260,6 +266,23 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
         </Tag>
       ),
     },
+    {
+      title: "\u062c\u0632\u0626\u06cc\u0627\u062a",
+      key: "details",
+      width: 110,
+      render: (_value, booking) => (
+        <Button
+          type="link"
+          icon={<EyeOutlined />}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelectBooking(booking);
+          }}
+        >
+          {"\u0628\u0631\u0631\u0633\u06cc"}
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -328,6 +351,10 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
         tableLayout="fixed"
         components={{ header: { cell: ResizableHeaderCell } }}
         className="dashboard-bookings-table"
+        onRow={(booking) => ({
+          onClick: () => onSelectBooking(booking),
+          className: "cursor-pointer",
+        })}
         onChange={(pagination, _filters, sorter) => {
           const activeSorter = Array.isArray(sorter) ? sorter[0] : sorter;
           const nextSortField = activeSorter?.columnKey;

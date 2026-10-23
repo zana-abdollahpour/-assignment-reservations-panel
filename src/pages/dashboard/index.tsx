@@ -8,6 +8,7 @@ import { BookingStats } from "./booking-stats";
 import { BookingTable } from "./booking-table";
 import { initialBookings } from "./mock-data";
 import { NewBookingModal } from "./new-booking-modal";
+import { BookingDetailsModal } from "./booking-details-modal";
 import { normalizeIranianMobile } from "./reservation-validation";
 import type { Booking, NewBookingValues } from "./types";
 
@@ -16,6 +17,7 @@ import { toPersianDigits } from "@/utils/numbers.utils";
 export default function DashboardPage() {
   const [bookings, setBookings] = useState(initialBookings);
   const [createOpen, setCreateOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   function createBooking(values: NewBookingValues) {
     const newBooking: Booking = {
@@ -29,6 +31,28 @@ export default function DashboardPage() {
     };
     setBookings((current) => [newBooking, ...current]);
     setCreateOpen(false);
+  }
+
+  function updateBooking(
+    id: number,
+    values: NewBookingValues & { status: Booking["status"] },
+  ) {
+    setBookings((current) =>
+      current.map((booking) =>
+        booking.id === id
+          ? {
+              ...booking,
+              customer: values.customer.trim(),
+              phone: toPersianDigits(normalizeIranianMobile(values.phone)),
+              service: values.service.trim(),
+              date: values.date.calendar("gregory").format("YYYY-MM-DD"),
+              time: toPersianDigits(dayjs(values.time).format("HH:mm")),
+              status: values.status,
+            }
+          : booking,
+      ),
+    );
+    setSelectedBooking(null);
   }
 
   return (
@@ -54,7 +78,12 @@ export default function DashboardPage() {
       </div>
 
       <BookingStats bookings={bookings} />
-      <BookingTable bookings={bookings} />
+      <BookingTable bookings={bookings} onSelectBooking={setSelectedBooking} />
+      <BookingDetailsModal
+        booking={selectedBooking}
+        onClose={() => setSelectedBooking(null)}
+        onSave={updateBooking}
+      />
       <NewBookingModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
