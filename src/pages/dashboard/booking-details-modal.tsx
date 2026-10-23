@@ -11,20 +11,18 @@ import {
 import dayjs from "dayjs";
 import "jalaliday";
 
-import { reservationSchema, zodFieldRule } from "./reservation-validation";
-import { initialBookings } from "./mock-data";
+import { reservationSchema, zodFieldRule } from "./reservation.validation";
 import type { Booking, BookingStatus, NewBookingValues } from "./types";
 import { toEnglishDigits, toPersianDigits } from "@/utils/numbers.utils";
 import { persianizePickerContent } from "@/utils/persian-picker.utils";
 
 type BookingFormValues = NewBookingValues & { status: BookingStatus };
 
-const statusOptions: { value: BookingStatus; label: string }[] = Array.from(
-  new Set(initialBookings.map((booking) => booking.status)),
-).map((status, index) => ({
-  value: status,
-  label: ["تأییدشده", "در انتظار تأیید", "لغوشده"][index] ?? status,
-}));
+const statusOptions: { value: BookingStatus; label: string }[] = [
+  { value: "تأییدشده", label: "تأییدشده" },
+  { value: "در انتظار تأیید", label: "در انتظار تأیید" },
+  { value: "لغوشده", label: "لغوشده" },
+];
 
 type Props = {
   booking: Booking | null;

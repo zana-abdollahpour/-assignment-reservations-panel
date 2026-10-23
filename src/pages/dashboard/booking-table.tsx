@@ -4,6 +4,7 @@ import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import {
   Button,
   Card,
+  Alert,
   Empty,
   Input,
   Select,
@@ -107,11 +108,15 @@ export function BookingTable({
   bookings,
   total,
   loading,
+  error,
+  onRetry,
   onSelectBooking,
 }: {
   bookings: Booking[];
   total: number;
   loading: boolean;
+  error: Error | null;
+  onRetry: () => void;
   onSelectBooking: (booking: Booking) => void;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -297,6 +302,16 @@ export function BookingTable({
           />
         </div>
       </div>
+      {error && (
+        <Alert
+          type="error"
+          showIcon
+          className="m-4"
+          message="دریافت رزروها ناموفق بود."
+          description={error.message}
+          action={<Button onClick={onRetry}>تلاش دوباره</Button>}
+        />
+      )}
       <Table<Booking>
         loading={loading}
         rowKey="id"

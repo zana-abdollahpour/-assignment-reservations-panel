@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PlusOutlined } from "@ant-design/icons";
-import { Button, notification, Typography } from "antd";
+import { Alert, Button, Typography } from "antd";
 import dayjs from "dayjs";
 import "jalaliday";
 import { useSearchParams } from "react-router";
@@ -11,82 +11,27 @@ import { NewBookingModal } from "./new-booking-modal";
 import { BookingDetailsModal } from "./booking-details-modal";
 import { normalizeIranianMobile } from "@/utils/phone.utils";
 import type { Booking, NewBookingValues } from "./types";
+import type { BookingPayload } from "./bookings.api";
 import {
-  bookingsApi,
-  type BookingPayload,
-  type BookingSummary,
-} from "./bookings-api";
+  useBookingSummaryQuery,
+  useBookingsQuery,
+  useCreateBookingMutation,
+  useUpdateBookingMutation,
+} from "./bookings.queries";
 
 export default function DashboardPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [total, setTotal] = useState(0);
-  const [summary, setSummary] = useState<BookingSummary>({
-    total: 0,
-    today: 0,
-    confirmed: 0,
-    cancelled: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [searchParams] = useSearchParams();
   const queryString = searchParams.toString();
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    bookingsApi
-      .list(queryString)
-      .then((page) => {
-        if (active) {
-          setBookings(page.items);
-          setTotal(page.total);
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          notification.error({
-            message:
-              error instanceof Error
-                ? error.message
-                : "دریافت رزروها ناموفق بود.",
-          });
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [queryString, refreshKey]);
-
-  useEffect(() => {
-    let active = true;
-    bookingsApi
-      .summary()
-      .then((nextSummary) => {
-        if (active) setSummary(nextSummary);
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          notification.error({
-            message:
-              error instanceof Error
-                ? error.message
-                : "دریافت آمار رزروها ناموفق بود.",
-          });
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [refreshKey]);
+  const bookingsQuery = useBookingsQuery(queryString);
+  const summaryQuery = useBookingSummaryQuery();
+  const createMutation = useCreateBookingMutation();
+  const updateMutation = useUpdateBookingMutation();
 
   async function createBooking(values: NewBookingValues) {
-    const newBooking: BookingPayload = {
+    const booking: BookingPayload = {
       customer: values.customer.trim(),
       phone: normalizeIranianMobile(values.phone),
       service: values.service.trim(),
@@ -94,27 +39,15 @@ export default function DashboardPage() {
       time: dayjs(values.time).format("HH:mm"),
       status: "در انتظار تأیید",
     };
-    setSaving(true);
-    try {
-      await bookingsApi.create(newBooking);
-      setRefreshKey((current) => current + 1);
-      setCreateOpen(false);
-    } catch (error) {
-      notification.error({
-        message:
-          error instanceof Error ? error.message : "ثبت رزرو ناموفق بود.",
-      });
-      throw error;
-    } finally {
-      setSaving(false);
-    }
+    await createMutation.mutateAsync(booking);
+    setCreateOpen(false);
   }
 
   async function updateBooking(
     id: number,
     values: NewBookingValues & { status: Booking["status"] },
   ) {
-    const updatedBooking: BookingPayload = {
+    const booking: BookingPayload = {
       customer: values.customer.trim(),
       phone: normalizeIranianMobile(values.phone),
       service: values.service.trim(),
@@ -122,20 +55,8 @@ export default function DashboardPage() {
       time: dayjs(values.time).format("HH:mm"),
       status: values.status,
     };
-    setSaving(true);
-    try {
-      await bookingsApi.update(id, updatedBooking);
-      setRefreshKey((current) => current + 1);
-      setSelectedBooking(null);
-    } catch (error) {
-      notification.error({
-        message:
-          error instanceof Error ? error.message : "ویرایش رزرو ناموفق بود.",
-      });
-      throw error;
-    } finally {
-      setSaving(false);
-    }
+    await updateMutation.mutateAsync({ id, booking });
+    setSelectedBooking(null);
   }
 
   return (
@@ -160,22 +81,39 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      <BookingStats summary={summary} />
+      {summaryQuery.isError ? (
+        <Alert
+          type="error"
+          showIcon
+          message="دریافت آمار رزروها ناموفق بود."
+          description={summaryQuery.error.message}
+          action={
+            <Button onClick={() => summaryQuery.refetch()}>تلاش دوباره</Button>
+          }
+        />
+      ) : (
+        <BookingStats
+          summary={summaryQuery.data}
+          loading={summaryQuery.isPending}
+        />
+      )}
       <BookingTable
-        bookings={bookings}
-        total={total}
-        loading={loading}
+        bookings={bookingsQuery.data?.items ?? []}
+        total={bookingsQuery.data?.total ?? 0}
+        loading={bookingsQuery.isPending || bookingsQuery.isFetching}
+        error={bookingsQuery.error}
+        onRetry={() => bookingsQuery.refetch()}
         onSelectBooking={setSelectedBooking}
       />
       <BookingDetailsModal
         booking={selectedBooking}
-        loading={saving}
+        loading={updateMutation.isPending}
         onClose={() => setSelectedBooking(null)}
         onSave={updateBooking}
       />
       <NewBookingModal
         open={createOpen}
-        loading={saving}
+        loading={createMutation.isPending}
         onClose={() => setCreateOpen(false)}
         onCreate={createBooking}
       />

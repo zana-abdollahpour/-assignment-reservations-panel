@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ClockCircleOutlined } from "@ant-design/icons";
 import { Button, DatePicker, Form, Input, Modal, TimePicker } from "antd";
-import { reservationSchema, zodFieldRule } from "./reservation-validation";
+import { reservationSchema, zodFieldRule } from "./reservation.validation";
 import type { NewBookingValues } from "./types";
 import { persianizePickerContent } from "@/utils/persian-picker.utils";
 import { toPersianDigits } from "@/utils/numbers.utils";
